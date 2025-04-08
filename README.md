@@ -1,4 +1,5 @@
 # 🧠 Gensyn RL-Swarm Mac 安装脚本
+本脚本用于自动部署 [Gensyn 官方 rl-swarm 项目](https://github.com/gensyn-ai/rl-swarm)，简化在 macOS 上的安装流程。
 
 这是一个适用于 Apple Silicon（M1/M2/M4）与 Intel 架构的 macOS 自动部署脚本，用于快速安装并运行 [Gensyn](https://github.com/gensyn-ai/rl-swarm) 的 `rl-swarm` 项目。
 
