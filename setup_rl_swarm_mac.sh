@@ -1,50 +1,51 @@
-# 安装Homebrew（如果还没安装的话）
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+#!/bin/bash
 
-# 安装指定版本的Python 3.10
-brew install python@3.10
+# 安装 Homebrew（如果尚未安装）
+if ! command -v brew &> /dev/null; then
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+fi
 
-# 创建新的虚拟环境
-python3.10 -m venv rl_env310
-
-# 激活虚拟环境
-source rl_env310/bin/activate
-
-# 验证Python是否安装成功
-python3 --version
-# 输出版本号，说明安装成功
-
-# 安装cloudflared
-brew install cloudflared
-
-# 将homebrew加入到变量环境
+# 添加 Homebrew 路径到环境变量
 echo 'export PATH="/opt/homebrew/bin:$PATH"' >> ~/.zshrc
-
-# 立即生效
 source ~/.zshrc
 
-# 创建python软链接到python3
-sudo ln -s /usr/local/bin/python3 /usr/local/bin/python
+# 安装 Python 3.10
+brew install python@3.10
 
-# 克隆仓库
-git clone https://github.com/zunxbt/rl-swarm.git && cd rl-swarm
+# 创建虚拟环境
+/opt/homebrew/bin/python3.10 -m venv ~/rl_env310
+source ~/rl_env310/bin/activate
 
-# 安装Node.js和Yarn
+# 验证 Python 安装成功
+python3 --version
+
+# 安装 cloudflared
+brew install cloudflared
+
+# 安装 Node.js 和 Yarn
 brew install node
 npm install -g yarn
 
-# 安装hivemind
-pip install hivemind
+# 修复 npm 权限（根据你的用户名可改）
+sudo chown -R $(id -u):$(id -g) ~/.npm
 
-# 安装指定版本的pydantic
-pip install pydantic==1.8.1
+# 安装兼容 pydantic>=2.0 的 hivemind 最新主分支
+pip install git+https://github.com/learning-at-home/hivemind.git@main
 
-# 修改npm的权限问题
-sudo chown -R 501:20 "/Users/macmini/.npm"
+# 安装其他依赖包
+pip install torch torchvision torchaudio
+pip install protobuf==5.27.5
+pip install pydantic>=2.0
 
-# 设置内存优化
+# 克隆项目仓库（如果不存在）
+if [ ! -d "$HOME/rl-swarm" ]; then
+  git clone https://github.com/zunxbt/rl-swarm.git ~/rl-swarm
+fi
+cd ~/rl-swarm
+
+# 设置 MPS 内存优化参数（Mac 专用）
 export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
 
-# 赋予权限并运行
+# 添加可执行权限并运行脚本
 chmod +x run_rl_swarm.sh
 ./run_rl_swarm.sh
