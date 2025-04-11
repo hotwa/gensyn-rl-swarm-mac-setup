@@ -1,69 +1,58 @@
-#!/bin/bash
+# 安装 Homebrew（如果还没安装的话）
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-set -e
+# 安装 pyenv 和 pyenv-virtualenv（用于安装并管理 Python 3.10）
+brew install pyenv pyenv-virtualenv
 
-echo "=== Gensyn RL-Swarm 通用安装脚本 for macOS Intel & Apple Silicon ==="
+# 设置 pyenv 环境变量
+echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc
+echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc
+echo 'eval "$(pyenv init --path)"' >> ~/.zshrc
+echo 'eval "$(pyenv init -)"' >> ~/.zshrc
+echo 'eval "$(pyenv virtualenv-init -)"' >> ~/.zshrc
+source ~/.zshrc
 
-# 检查架构
-ARCH=$(uname -m)
-if [[ "$ARCH" == "arm64" ]]; then
-    echo "✔ 当前为 Apple Silicon (arm64 架构)"
-    BREW_PREFIX="/opt/homebrew"
-else
-    echo "✔ 当前为 Intel (x86_64 架构)"
-    BREW_PREFIX="/usr/local"
-fi
+# 安装指定版本的 Python 3.10（如果还没有）
+pyenv install 3.10.13
 
-# 加载 brew 环境
-if ! command -v brew &>/dev/null; then
-    echo "⚠️ 未检测到 Homebrew，开始安装..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-fi
+# 创建新的虚拟环境
+pyenv virtualenv 3.10.13 rl_env
 
-echo "🔧 加载 Homebrew 环境变量..."
-eval "$($BREW_PREFIX/bin/brew shellenv)"
+# 激活虚拟环境
+pyenv activate rl_env
 
-echo "🚀 禁用代理"
-unset http_proxy https_proxy all_proxy
+# 验证 Python 是否安装成功
+python --version
+# 输出 3.10.x 版本号，说明安装成功
 
-echo "📥 克隆 rl-swarm 项目"
-git clone https://github.com/gensyn-ai/rl-swarm.git
-cd rl-swarm
+# 安装 cloudflared
+brew install cloudflared
 
-echo "🐍 安装 Python 和 Node.js"
-brew install python node
+# 将 homebrew 加入到变量环境
+echo 'export PATH="/opt/homebrew/bin:$PATH"' >> ~/.zshrc
 
-echo "🧪 创建并激活 Python 虚拟环境"
-python3 -m venv rl_env
-source rl_env/bin/activate
+# 立即生效
+source ~/.zshrc
 
-echo "🔁 建立 python 软链接指向 python3"
-sudo ln -sf "$(which python3)" /usr/local/bin/python
+# 创建 python 软链接到 python3（可选，因为 pyenv 已管理）
+# sudo ln -s /usr/local/bin/python3 /usr/local/bin/python
 
-echo "🐍 安装 Python 依赖包..."
-pip install -r requirements.txt
-pip install -r requirements-hivemind.txt
-pip install colorlog torch transformers datasets accelerate peft trl wandb hivemind bitsandbytes safetensors
+# 克隆仓库
+git clone https://github.com/zunxbt/rl-swarm.git && cd rl-swarm
 
-echo "🧠 设置 PyTorch MPS（Metal 后端）内存环境变量"
-export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
-
-echo "🧵 安装 Yarn"
+# 安装 Node.js 和 Yarn
+brew install node
 npm install -g yarn
 
-echo "🛠 检查并修复 npm 权限问题"
-sudo chown -R "$(id -u):$(id -g)" ~/.npm || true
+# 安装 hivemind
+pip install hivemind
 
-echo "📦 安装 modal-login 前端依赖"
-cd ../modal-login
-yarn add viem@2.25.0 @account-kit/react@latest next@latest
-yarn install
-cd ../rl-swarm
+# 修复 npm 权限问题
+sudo chown -R 501:20 "/Users/macmini/.npm"
 
-echo "🟢 启动脚本运行权限设置"
+# 设置内存优化（适用于 Apple Silicon）
+export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
+
+# 赋予权限并运行
 chmod +x run_rl_swarm.sh
-
-echo "🚀 启动项目运行..."
 ./run_rl_swarm.sh
-
-echo "✅ 全部完成！欢迎进入 Gensyn 的 RL Swarm 世界 🎉"
