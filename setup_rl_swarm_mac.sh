@@ -29,16 +29,17 @@ npm install -g yarn
 # 修复 npm 权限（根据你的用户名可改）
 sudo chown -R $(id -u):$(id -g) ~/.npm
 
-# 安装兼容 pydantic>=2.0 的 hivemind 最新主分支
-pip install git+https://github.com/learning-at-home/hivemind.git@main
+# 卸载所有 protobuf 版本，避免版本冲突
+pip uninstall -y protobuf
 
-# 安装其他依赖包
+# 安装 protobuf 5.27.5（必须与 hivemind 兼容）
+pip install protobuf==5.27.5 --no-cache-dir
+
+# 安装 hivemind 主分支（不自动安装依赖）
+pip install git+https://github.com/learning-at-home/hivemind.git@main --no-deps
+
+# 安装其依赖（注意顺序，避免覆盖正确的 protobuf）
 pip install torch torchvision torchaudio
-
-# 安装 protobuf 5.27.5，确保与 hivemind 兼容
-pip install protobuf==5.27.5
-
-# 安装 pydantic 兼容版本
 pip install pydantic>=2.0
 
 # 克隆项目仓库（如果不存在）
