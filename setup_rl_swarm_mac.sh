@@ -34,7 +34,7 @@ pip install git+https://github.com/learning-at-home/hivemind.git@main
 
 # 安装其他依赖包
 pip install torch torchvision torchaudio
-pip install protobuf==5.27.5
+pip install protobuf==5.27.5  # 强制安装 protobuf 5.27.5
 pip install pydantic>=2.0
 
 # 克隆项目仓库（如果不存在）
