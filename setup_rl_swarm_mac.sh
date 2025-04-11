@@ -36,6 +36,10 @@ npm install -g yarn
 # 安装hivemind
 pip install hivemind
 
+# 安装指定版本的pydantic
+pip install pydantic==1.8.1
+
+# 修改npm的权限问题
 sudo chown -R 501:20 "/Users/macmini/.npm"
 
 # 设置内存优化
