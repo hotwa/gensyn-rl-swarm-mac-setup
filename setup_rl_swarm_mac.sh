@@ -36,7 +36,7 @@ pip uninstall -y protobuf
 
 # 安装正确版本的依赖
 pip install idna>=3.10
-pip install protobuf==5.28.1 --no-cache-dir  # 使用稳定版本
+pip install protobuf==3.20.0 --no-cache-dir  # 使用符合 <5.28.0,>=3.12.2 的版本
 
 # 安装其他依赖
 pip install grpcio pybind11 pkgconfig typing_extensions
@@ -85,7 +85,8 @@ EOF
 chmod +x ~/patches/fix_type_annotations.py
 
 # 安装hivemind
-pip install git+https://github.com/learning-at-home/hivemind.git@master
+pip install git+https://github.com/learning-at-home/hivemind.git@master --no-deps
+pip install hivemind==1.1.5  # 使用稳定版本
 
 # 克隆项目仓库（如果不存在）
 if [ ! -d "$HOME/rl-swarm" ]; then
