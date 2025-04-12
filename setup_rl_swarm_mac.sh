@@ -7,12 +7,12 @@ if ! command -v brew &> /dev/null; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 fi
 
-# 安装 Python 3.9
-brew install python@3.9
+# 安装 Python 3.10
+brew install python@3.10
 
 # 创建虚拟环境
-/opt/homebrew/bin/python3.9 -m venv ~/rl_env39
-source ~/rl_env39/bin/activate
+/opt/homebrew/bin/python3.10 -m venv ~/rl_env310
+source ~/rl_env310/bin/activate
 
 # 验证 Python 安装成功
 python --version
@@ -34,18 +34,58 @@ pip install pydantic>=2.0
 # 卸载所有 protobuf 版本，避免版本冲突
 pip uninstall -y protobuf
 
-# 安装与hivemind兼容的protobuf版本（5.27.0而不是5.27.5）
-pip install protobuf==5.27.0 --no-cache-dir
+# 安装正确版本的依赖
+pip install idna>=3.10
+pip install protobuf==5.28.1 --no-cache-dir  # 使用稳定版本
 
-# 安装其他依赖（这些可能是hivemind需要的）
-pip install grpcio pybind11 pkgconfig
+# 安装其他依赖
+pip install grpcio pybind11 pkgconfig typing_extensions
 
-# 使用--no-deps安装hivemind，以避免它覆盖我们手动安装的protobuf
-pip install git+https://github.com/learning-at-home/hivemind.git@master --no-deps
+# 创建补丁文件解决类型注解问题
+mkdir -p ~/patches
+cat > ~/patches/fix_type_annotations.py << 'EOF'
+#!/usr/bin/env python3
+import sys
+import os
+import re
 
-# 再次检查安装的protobuf版本并输出，确保仍然是兼容的版本
-echo "当前安装的protobuf版本:"
-pip list | grep protobuf
+def fix_file(file_path):
+    with open(file_path, 'r') as f:
+        content = f.read()
+    
+    # 替换 float | int 为 Union[float, int]
+    modified = re.sub(r'(\w+)\s*\|\s*(\w+)', r'Union[\1, \2]', content)
+    
+    # 如果文件被修改，添加Union导入
+    if modified != content and 'from typing import Union' not in modified:
+        if 'from typing import ' in modified:
+            modified = re.sub(r'from typing import (.*)', r'from typing import \1, Union', modified)
+        else:
+            modified = 'from typing import Union\n' + modified
+    
+    # 只有在文件被修改的情况下才写入
+    if modified != content:
+        print(f"修复类型注解: {file_path}")
+        with open(file_path, 'w') as f:
+            f.write(modified)
+
+def fix_directory(directory):
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            if file.endswith('.py'):
+                fix_file(os.path.join(root, file))
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        fix_directory(sys.argv[1])
+    else:
+        print("请提供要修复的目录路径")
+EOF
+
+chmod +x ~/patches/fix_type_annotations.py
+
+# 安装hivemind
+pip install git+https://github.com/learning-at-home/hivemind.git@master
 
 # 克隆项目仓库（如果不存在）
 if [ ! -d "$HOME/rl-swarm" ]; then
@@ -53,10 +93,13 @@ if [ ! -d "$HOME/rl-swarm" ]; then
 fi
 cd ~/rl-swarm
 
+# 修复类型注解
+python ~/patches/fix_type_annotations.py ~/rl-swarm
+
 # 设置 MPS 内存优化参数（Mac 专用）
 export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
 # 添加内存限制参数
-export PYTORCH_MPS_ALLOCATOR_RESERVED_SIZE=4096  # 限制4GB内存使用
+export PYTORCH_MPS_ALLOCATOR_RESERVED_SIZE=6144  # 增加内存限制到6GB
 
 # 添加更多内存优化设置
 export PYTORCH_MPS_LOW_WATERMARK_RATIO=0.5
@@ -74,11 +117,11 @@ MAX_RESTARTS=100
 restart_count=0
 
 # 激活虚拟环境
-source ~/rl_env39/bin/activate
+source ~/rl_env310/bin/activate
 
 # 设置内存优化参数
 export PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0
-export PYTORCH_MPS_ALLOCATOR_RESERVED_SIZE=4096
+export PYTORCH_MPS_ALLOCATOR_RESERVED_SIZE=6144
 export PYTORCH_MPS_LOW_WATERMARK_RATIO=0.5
 export PYTORCH_MPS_ALLOCATOR_FRAG_THRESHOLD=0.5
 
@@ -104,8 +147,8 @@ while [ $restart_count -lt $MAX_RESTARTS ]; do
     else
         restart_count=$((restart_count+1))
         echo "脚本异常退出(状态码: $exit_status)，准备重启..."
-        echo "重启前休息10秒..."
-        sleep 10
+        echo "重启前休息30秒..."  # 增加等待时间
+        sleep 30
     fi
 done
 
