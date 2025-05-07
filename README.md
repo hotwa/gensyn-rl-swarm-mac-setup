@@ -35,6 +35,71 @@ EOF
 sudo chmod +x /usr/local/bin/ss
 ```
 
+## NAT4 fix
+
+```shell
+hivemind.p2p.p2p_daemon_bindings.utils.P2PDaemonError: Daemon failed to start: 2025/05/07 09:54:31 failed to connect to bootstrap peers
+```
+
+vim ~/rl-swarm/hivemind_exp/runner/gensyn/testnet_grpo_runner.py
+
+```shell
+def setup_dht(self, grpo_args):
+        # dht = super().setup_dht(grpo_args)
+        peer_id = str(dht.peer_id)
+        self.register_peer(peer_id)
+        return dht
+```
+
+```shell
+-        dht = hivemind.DHT(
+-            start=True,
+-            startup_timeout=30,
+-            **self._dht_kwargs(grpo_args)
+-        )
++        dht = hivemind.DHT(
++            start=True,
++            client_mode=True,
+             use_ipfs=True, # 走中继模式
++            ensure_bootstrap_success=False,
++            startup_timeout=30,
++            **self._dht_kwargs(grpo_args)
++        )
+
+```
+
+## AttributeError: 'TestnetGRPORunner' object has no attribute 'name'
+
+edit ~/rl-swarm/hivemind_exp/runner/gensyn/testnet_grpo_runner.py
+
+```shell
+--- a/hivemind_exp/runner/gensyn/testnet_grpo_runner.py
++++ b/hivemind_exp/runner/gensyn/testnet_grpo_runner.py
+@@ class TestnetGRPORunner(GRPORunner):
+     def __init__(self, coordinator: SwarmCoordinator) -> None:
+-        self.coordinator = coordinator
++        super().__init__()             # 如果父类需要初始化，也一并调用
++        self.coordinator = coordinator
++        self.name = "TestnetGRPO"      # ← 定义一个名称，用于日志 log_tag
+
+```
+
+## auto restart 
+
+```shell
+~/rl-swarm/auto_restart.sh
+```
+
+## NameError: name 'hivemind' is not defined
+
+vim ~/rl-swarm/hivemind_exp/runner/gensyn/testnet_grpo_runner.py
+
+add in top line
+
+```shell
+import hivemind
+```
+
 ⸻
 
 ✅ 支持平台
