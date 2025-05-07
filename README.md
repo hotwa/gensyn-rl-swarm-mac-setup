@@ -24,6 +24,17 @@
 	•	设置 PyTorch 相关环境变量
 	•	启动执行训练脚本 run_rl_swarm.sh
 
+ss 命令报错解决
+
+```shell
+sudo tee /usr/local/bin/ss > /dev/null << 'EOF'
+#!/bin/bash
+# 简单模拟 Linux ss，参数原样转给 netstat -an
+netstat -an "$@"
+EOF
+sudo chmod +x /usr/local/bin/ss
+```
+
 ⸻
 
 ✅ 支持平台
